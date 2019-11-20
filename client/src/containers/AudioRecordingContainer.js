@@ -173,9 +173,10 @@ function getAudioStream() {
     // const audioBlob = new Blob([encodedWav], {
     //   type: 'application/octet-stream'
     // });
-    const audio = processAudio(downsampleBuffer);
+    const audio = processAudio(downsampledBuffer);
     // return audioBlob;
     // console.log('Encoded wav', encodedWav);
+    console.log('Encoded audio', audio);
     // console.log('WAV File')
     // return encodedWav;
     return audio;
@@ -272,7 +273,7 @@ class AudioRecordingContainer extends Component {
         const audio = exportBuffer(buffer[0]);
         console.log("Processed audio, sending audio to backend");
         // Do your audio processing here.
-        // console.log('AUDIO IS', audio);
+        console.log('AUDIO IS', audio);
         this.setState({
           recording: false
         });

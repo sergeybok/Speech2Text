@@ -115,6 +115,11 @@ function getAudioStream() {
     return result;
   }
   
+  function floatTo16Bit(x) {
+    const s = Math.max(-1, Math.min(1,x));
+    return s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+
   function floatTo16BitPCM(output, offset, input) {
     for (let i = 0; i < input.length; i++, offset += 2) {
       const s = Math.max(-1, Math.min(1, input[i]));
@@ -155,12 +160,29 @@ function getAudioStream() {
   }
 
   function processAudio(samples) {
-    const buffer = new ArrayBuffer(samples.length * 2);
-    const view = new DataView(buffer);
-    floatTo16BitPCM(view,0,samples);
-    return view;
+    // const buffer = new ArrayBuffer(samples.length * 2);
+    // const view = new DataView(buffer);
+    // floatTo16BitPCM(view,0,samples);
+    const arr = new Int16Array(samples.map(floatTo16Bit));
+
+    return arr;
   }
+
+  function arraysMatch(arr1, arr2) {
+
+    // Check if the arrays are the same length
+    if (arr1.length !== arr2.length) return false;
   
+    // Check if all items exist and are in the same order
+    for (var i = 0; i < arr1.length; i++) {
+      if (arr1[i] !== arr2[i]) return false;
+    }
+  
+    // Otherwise, return true
+    return true;
+  
+  };
+   
 
   /**
    * Samples the buffer at 16 kHz.
@@ -177,9 +199,11 @@ function getAudioStream() {
     // return audioBlob;
     // console.log('Encoded wav', encodedWav);
     console.log('Encoded audio', audio);
+    // console.log('Encoded audio', downsampledBuffer);
     // console.log('WAV File')
     // return encodedWav;
     return audio;
+    // return downsampledBuffer;
   }
   
 
@@ -205,7 +229,6 @@ class AudioRecordingContainer extends Component {
 
     async componentDidMount() {
         let stream;
-
         try {
             stream = await getAudioStream();
         } catch (error) {
@@ -213,7 +236,6 @@ class AudioRecordingContainer extends Component {
             console.log('Error encountered', error);
             alert("Problem with the audio receiver: "+error.name);
         }
-
         this.setState({ stream });
     }
 
@@ -266,8 +288,8 @@ class AudioRecordingContainer extends Component {
           }
         );
     }
-
-    stopRecord = async () => {
+    
+    stopRecord_backup = async () => {
         const { recorder } = this.state;
         const { buffer } = await recorder.stop()
         const audio = exportBuffer(buffer[0]);
@@ -290,6 +312,41 @@ class AudioRecordingContainer extends Component {
             buffer : audio.buffer
           })
         });
+      const body = await response.json();
+      this.setState({transcript: body.transcript});
+      console.log("Received response from backend, should be displaying");
+    }
+
+    stopRecord = async () => {
+      const { recorder } = this.state;
+      const { buffer } = await recorder.stop()
+      const audio = exportBuffer(buffer[0]);
+      console.log("Processed audio, sending audio to backend");
+      // Do your audio processing here.
+      console.log('AUDIO IS', audio);
+      this.setState({
+        recording: false
+      });
+      const formData = new FormData();
+      formData.append('encoding', 'LINEAR16');
+      formData.append('sampleRateHertz', exportSampleRate);
+      formData.append('languageCode', 'en-US');
+      formData.append('soundBlob', audio);
+      
+      const audioString = audio.toString('binary');
+      const newArr = new Uint8Array(audioString);
+      const comp =  arraysMatch(audio, newArr);
+      console.log("array comparison ",comp);
+      if (!comp) {
+        console.log('length', audio.length);
+        console.log('recons length ', newArr.length);
+      }
+
+      const response = await fetch('http://localhost:5000/upload', {
+        method : 'POST',
+        body : formData
+      });
+      
       const body = await response.json();
       this.setState({transcript: body.transcript});
       console.log("Received response from backend, should be displaying");

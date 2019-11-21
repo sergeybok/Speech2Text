@@ -5,13 +5,15 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "export GOOGLE_APPLICATION_CREDENTIALS=‎⁨/Users/sergiybokhnyak/Desktop/Work/ChatBotLessons/language-chatbot-f09fba9828ac.json⁩ && node server.js"
+    "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@google-cloud/speech": "^3.4.0",
+    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "multer": "^1.4.2"
   }
 }
